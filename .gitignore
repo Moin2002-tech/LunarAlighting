@@ -1,0 +1,120 @@
+# Build directories
+build/
+cmake-build-debug/
+cmake-build-release/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Compiled object files and executables
+*.o
+*.obj
+*.exe
+*.out
+*.app
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Python files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pytest cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database files
+database/*.db
+database/*.sqlite
+database/*.sqlite3
+
+# External dependencies (if they're large binaries)
+External/libtorch/
+External/*/lib/
+External/*/bin/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Documentation build
+docs/_build/
+doxygen/
+
+# Profiling and performance data
+*.prof
+*.profile
+*.perf
+
+# Model files and training artifacts
+models/
+checkpoints/
+*.pt
+*.pth
+*.pkl
+*.pickle
+
+# Test output
+test_results/
+test_outputs/
+
+# Configuration files with secrets
+config.ini
+.env
+.secrets
+
+# C++ specific
+*.a
+*.lib
+*.dll
+*.dylib
+*.so.*
+
+# GCC/Clang specific
+*.d
+*.ii
+*.map
+
+# CUDA specific
+*.cu.o
+*.ptx
