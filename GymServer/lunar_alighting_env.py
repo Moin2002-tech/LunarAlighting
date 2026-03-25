@@ -93,7 +93,7 @@ class LunarAlightingEnv(gym.Env):
         angle = np.clip(angle, -np.pi, np.pi)
         
         # Check ground collision (simplified)
-        ground_level = 0.0
+        ground_level = -0.8  # Adjusted for normalized coordinates
         if y <= ground_level:
             y = ground_level
             vy = 0
@@ -118,8 +118,9 @@ class LunarAlightingEnv(gym.Env):
         truncated = False
         
         if left_contact and right_contact:
-            # Landed
-            if abs(vy) < self.max_landing_velocity and abs(angle) < self.max_angle:
+            # Landed - use normalized velocity for comparison
+            vy_normalized = vy / 5.0  # Same normalization as in observation
+            if abs(vy_normalized) < (self.max_landing_velocity / 5.0) and abs(angle) < self.max_angle:
                 reward = 100.0  # Successful landing
                 terminated = True
             else:
@@ -129,10 +130,20 @@ class LunarAlightingEnv(gym.Env):
             reward = -100.0
             terminated = True
         else:
-            # Small reward for staying alive and moving toward landing
-            reward = -0.1  # Small negative reward for each step
-            if y > 0:  # Reward for being above ground
+            # Reward for staying alive and making progress toward landing
+            # Small positive reward for each step to encourage survival
+            reward = 0.1
+            
+            # Additional reward for being above ground (incentivize controlled descent)
+            if y > 0:
+                reward += 0.2
+                
+            # Reward for reducing vertical velocity (moving toward safe landing)
+            if abs(vy) < 1.0:
                 reward += 0.1
+                
+            # Small penalty for being too far horizontally from center
+            reward -= 0.05 * abs(x)
         
         self.step_count += 1
         if self.step_count >= self.max_steps:
