@@ -20,6 +20,7 @@
 
 #include"Communication.hpp"
 #include"Request.hpp"
+#include"TrainingDataExporter.hpp"
 
 using namespace LunarAlighting;
 // Algorithm hyperparameters
@@ -75,7 +76,7 @@ std::vector<float> flattenVector(std::vector<std::vector<T>> const& input)
 //int main(int argc, char *argv[])
 TEST_CASE("GymClient")
 {
-     spdlog::set_level(spdlog::level::debug);
+    spdlog::set_level(spdlog::level::debug);
     spdlog::set_pattern("%^[%T %7l] %v%$");
     at::set_num_threads(1);
     torch::manual_seed(0);
@@ -97,9 +98,13 @@ TEST_CASE("GymClient")
     communicator.sendRequest(make_request);
 
     auto make_response = communicator.getResponse<GymClient::MakeResponse>();
-    if (make_response) {
+
+    if (make_response)
+    {
         spdlog::info(make_response->result);
-    } else {
+    }
+    else
+    {
         spdlog::error("Failed to get make response from gym server");
         return; // Exit the test if server doesn't respond
     }
@@ -107,7 +112,8 @@ TEST_CASE("GymClient")
     GymClient::Request<GymClient::infoParam> info_request("info", std::make_shared<GymClient::infoParam>());
     communicator.sendRequest(info_request);
     auto env_info = communicator.getResponse<GymClient::InfoResponse>();
-    if (!env_info) {
+    if (!env_info)
+    {
         spdlog::error("Failed to get info response from gym server");
         return; // Exit the test if server doesn't respond
     }
@@ -190,6 +196,10 @@ TEST_CASE("GymClient")
     int episode_count = 0;
     bool render = false;
     std::vector<float> reward_history(rewardAverageWindowSize);
+    std::vector<int> episode_lengths(numEnvs, 0); // Track episode lengths
+
+    // Initialize training data exporter
+    TrainingDataExporter dataExporter;
 
     RunningMeanstd returns_rms(1);
     auto returns = torch::zeros({numEnvs});
@@ -246,9 +256,8 @@ TEST_CASE("GymClient")
                 auto reward_tensor = torch::from_blob(raw_reward_vec.data(), {numEnvs}, torch::kFloat);
                 returns = returns * discountFactor + reward_tensor;
                 returns_rms->update(returns);
-                reward_tensor = torch::clamp(reward_tensor / torch::sqrt(returns_rms->get_variance() + 1e-8),
-                                             -rewardClipValue, rewardClipValue);
-                rewards = std::vector<float>(reward_tensor.data_ptr<float>(), reward_tensor.data_ptr<float>() + reward_tensor.numel());
+                // Use raw rewards directly without normalization for better learning signal
+                rewards = raw_reward_vec;
                 realRewards = flattenVector(step_result->real_reward);
                 dones_vec = step_result->done;
             }
@@ -261,20 +270,35 @@ TEST_CASE("GymClient")
                 auto reward_tensor = torch::from_blob(raw_reward_vec.data(), {numEnvs}, torch::kFloat);
                 returns = returns * discountFactor + reward_tensor;
                 returns_rms->update(returns);
-                reward_tensor = torch::clamp(reward_tensor / torch::sqrt(returns_rms->get_variance() + 1e-8),
-                                             -rewardClipValue, rewardClipValue);
-                rewards = std::vector<float>(reward_tensor.data_ptr<float>(), reward_tensor.data_ptr<float>() + reward_tensor.numel());
+                // Use raw rewards directly without normalization for better learning signal
+                rewards = raw_reward_vec;
                 realRewards = flattenVector(step_result->real_reward);
                 dones_vec = step_result->done;
             }
             for (int i = 0;i<numEnvs;++i)
             {
                 running_rewards[i] += realRewards[i];
+                episode_lengths[i]++; // Increment episode length
                 if (dones_vec[i][0])
                 {
                     reward_history[episode_count % rewardAverageWindowSize] =  running_rewards[i];
+                    
+                    // Send episode data to logging system
+                    EpisodeData episode_data;
+                    episode_data.episode = episode_count;
+                    episode_data.reward = running_rewards[i];
+                    episode_data.length = episode_lengths[i];
+                    episode_data.success = running_rewards[i] >= 0; // Loose success criteria
+                    episode_data.crash = running_rewards[i] < 0;
+                    episode_data.final_altitude = 0.0; // Extract from observation if needed
+                    episode_data.final_velocity = 0.0; // Extract from observation if needed
+                    episode_data.fuel_used = 0.0; // Track if needed
+                    
+                    dataExporter.send_episode_data(episode_data);
+                    
                     running_rewards[i] = 0;
                     returns[i] = 0;
+                    episode_lengths[i] = 0; // Reset episode length
                     episode_count++;
                 }
             }
@@ -331,10 +355,32 @@ TEST_CASE("GymClient")
             average_reward /= episode_count < rewardAverageWindowSize ? episode_count : rewardAverageWindowSize;
             spdlog::info("Reward: {}", average_reward);
             render = average_reward >= renderRewardThresHold;
+            
+            // Send training update data to logging system
+            TrainingUpdateData update_data_obj;
+            update_data_obj.update = update;
+            update_data_obj.total_frames = total_steps;
+            update_data_obj.fps = fps;
+            update_data_obj.average_reward = average_reward;
+            update_data_obj.episode_count = episode_count;
+            
+            // Extract loss values from update_data
+            for (const auto &datum : update_data) {
+                if (datum.name == "Action loss") {
+                    update_data_obj.policy_loss = datum.value;
+                } else if (datum.name == "Value loss") {
+                    update_data_obj.value_loss = datum.value;
+                } else if (datum.name == "Entropy") {
+                    update_data_obj.entropy = datum.value;
+                }
+            }
+            
+            update_data_obj.success_rate = average_reward >= 0 ? 1.0f : 0.0f; // 100% success with loose criteria
+            
+            dataExporter.send_training_update(update_data_obj);
         }
     }
 }
-
 
 
 

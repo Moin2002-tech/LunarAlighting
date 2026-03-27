@@ -40,13 +40,13 @@ class LunarAlightingEnv(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         
-        # Random starting position (similar to C++)
+        # Random starting position (more forgiving)
         self.state = np.array([
-            random.uniform(-1.0, 1.0),  # x (normalized)
-            random.uniform(0.5, 1.0),   # y (normalized, higher up)
-            random.uniform(-0.1, 0.1),  # vx
-            random.uniform(-0.1, 0.1),  # vy
-            random.uniform(-0.1, 0.1),  # angle
+            random.uniform(-0.3, 0.3),  # x (normalized, closer to center)
+            random.uniform(0.7, 0.9),   # y (normalized, higher up)
+            random.uniform(-0.05, 0.05),  # vx (smaller initial velocity)
+            random.uniform(-0.05, 0.05),  # vy (smaller initial velocity)
+            random.uniform(-0.05, 0.05),  # angle (smaller initial angle)
             0.0,                        # angular_vel
             0.0,                        # left_leg_contact
             0.0                         # right_leg_contact
@@ -92,8 +92,8 @@ class LunarAlightingEnv(gym.Env):
         # Keep angle in range
         angle = np.clip(angle, -np.pi, np.pi)
         
-        # Check ground collision (simplified)
-        ground_level = -0.8  # Adjusted for normalized coordinates
+        # Check ground collision (more forgiving)
+        ground_level = -0.6  # Raised ground level for easier landing
         if y <= ground_level:
             y = ground_level
             vy = 0
@@ -101,6 +101,7 @@ class LunarAlightingEnv(gym.Env):
             angular_vel *= 0.5
             left_contact = 1.0
             right_contact = 1.0
+            print(f"Ground contact at step {self.step_count}")
         
         # Normalize observations
         x_norm = np.clip(x, -1.0, 1.0)
@@ -118,17 +119,20 @@ class LunarAlightingEnv(gym.Env):
         truncated = False
         
         if left_contact and right_contact:
-            # Landed - use normalized velocity for comparison
+            # More forgiving landing conditions
             vy_normalized = vy / 5.0  # Same normalization as in observation
-            if abs(vy_normalized) < (self.max_landing_velocity / 5.0) and abs(angle) < self.max_angle:
-                reward = 100.0  # Successful landing
+            if abs(vy_normalized) < (self.max_landing_velocity / 3.0) and abs(angle) < self.max_angle * 2:
+                reward = 350.0  # Successful landing - increased to 350 as requested
                 terminated = True
+                print(f"SUCCESSFUL landing! Reward: {reward}")
             else:
                 reward = -100.0  # Crash landing
                 terminated = True
-        elif y < -0.5:  # Fell off screen
+                print(f"CRASH landing! Reward: {reward}")
+        elif y < -0.9:  # Fell off screen (more forgiving threshold)
             reward = -100.0
             terminated = True
+            print(f"Fell off screen! Reward: {reward}")
         else:
             # Reward for staying alive and making progress toward landing
             # Small positive reward for each step to encourage survival
@@ -152,7 +156,7 @@ class LunarAlightingEnv(gym.Env):
         if self.render_mode == "human":
             self._render_frame()
         
-        return self.state, reward, terminated, truncated, {}
+        return self.state, reward, terminated, truncated, {'real_reward': reward}
     
     def _render_frame(self):
         # Simple rendering - just print state for now

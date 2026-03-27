@@ -1,0 +1,14 @@
+{
+  "metadata": {
+    "algorithm": "PPO",
+    "env_name": "LunarAlighting-v1",
+    "num_envs": 8,
+    "batch_size": 40,
+    "max_frames": 10000000,
+    "reward_threshold": 160,
+    "start_time": "2026-03-26T03:26:03.134214",
+    "last_update": "2026-03-26T03:26:24.849390"
+  },
+  "training_metrics": [],
+  "episodes": []
+}

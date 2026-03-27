@@ -12,6 +12,9 @@ find_package(ZeroMQ CONFIG REQUIRED)
 
 find_package(msgpack-c CONFIG REQUIRED)
 
+# Find nlohmann/json for data export
+find_package(nlohmann_json CONFIG REQUIRED)
+
 # Find SDL3 for simulation
 find_package(SDL3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
@@ -67,6 +70,7 @@ add_executable(LunarAlightingRL main.cpp
         LunarAlighting/GymClient.cpp
         LunarAlighting/Communication.cpp
         LunarAlighting/LunarSimulation.cpp
+        LunarAlighting/TrainingDataExporter.hpp
         UnitsTest/UnitsTest.cpp
 )
 
@@ -123,6 +127,8 @@ target_link_libraries(LunarAlightingRL PRIVATE
 target_link_libraries(LunarAlightingRL PRIVATE libzmq-static)
 
 target_link_libraries(LunarAlightingRL PRIVATE msgpack-c)
+
+target_link_libraries(LunarAlightingRL PRIVATE nlohmann_json::nlohmann_json)
 
 # Ensure fmt library is properly linked in debug mode
 set_target_properties(LunarAlightingRL PROPERTIES

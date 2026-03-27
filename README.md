@@ -130,16 +130,29 @@ pip install gymnasium numpy pyzmq msgpack
 ### 7. Build the Project
 
 ```bash
-# Create build directory
-mkdir build
-cd build
+# Create build directory (choose one)
+mkdir cmake-build-release
+# OR
+mkdir cmake-build-debug
 
 # Configure with CMake
+cd cmake-build-release
 cmake ..
+
+# OR for debug
+cd cmake-build-debug
+cmake .. -DCMAKE_BUILD_TYPE=Debug
 
 # Build the project
 make -j$(nproc)
 ```
+
+### Build Configurations
+
+- **Release Build** (`cmake-build-release/`): Optimized for performance
+- **Debug Build** (`cmake-build-debug/`): Includes debugging symbols
+
+Choose the appropriate build directory based on your needs.
 
 ## CUDA Configuration Details
 
@@ -163,24 +176,158 @@ The CMakeLists.txt includes explicit CUDA library paths:
 
 ## Running the Project
 
-### 1. Start the Gym Server
+### Quick Start
+
+For a complete training run with data logging and visualization:
+
+```bash
+# 1. Start the Python Logger (captures training data)
+python3 Logger.py
+
+# 2. In a new terminal, start the Gym Server
+python3 start_gym_server.py
+
+# 3. In another terminal, build and run the C++ client
+# For release build
+cd cmake-build-release
+./LunarAlightingRL
+
+# OR for debug build
+cd cmake-build-debug
+./LunarAlightingRL
+```
+
+### Detailed Steps
+
+#### 1. Start the Data Logger
+
+The logger captures training metrics and saves them to JSON files:
 
 ```bash
 # Activate Python environment
 source .venv/bin/activate
 
-# Start the server
+# Start the logger (runs in background)
+python3 Logger.py &
+```
+
+The logger will create:
+- `training_data.json` - Main training metrics and episode data
+- `test_data.json` - Test run data
+- `realistic_training_data.json` - Realistic simulation data
+
+#### 2. Start the Gym Server
+
+```bash
+# In a new terminal
+source .venv/bin/activate
 python3 start_gym_server.py
 ```
 
-The server will start on port 10201 and wait for C++ client connections.
+The server will:
+- Start on port 10201
+- Wait for C++ client connections
+- Provide the lunar alighting environment
 
-### 2. Run the C++ Client
+#### 3. Run the C++ Client
 
 ```bash
-# From build directory
+# From project root (choose build type)
+
+# Release build (optimized)
+cd cmake-build-release
+./LunarAlightingRL
+
+# Debug build (with debugging symbols)
+cd cmake-build-debug
 ./LunarAlightingRL
 ```
+
+### Training Output and Analysis
+
+The system generates comprehensive training data and visualizations:
+
+#### Data Files Generated
+- `training_data.json` - Complete training metrics and episode results
+- `test_data.json` - Test episode data
+- `realistic_training_data.json` - Realistic simulation scenarios
+
+#### Analysis Visualizations
+
+The training process automatically generates the following analysis charts:
+
+![Learning Progress](analysis_output/learning_progress.png)
+*Figure: Learning progress showing reward improvement over training episodes*
+
+![Model Behavior](analysis_output/model_behavior.png)
+*Figure: Model behavior analysis including success rates and landing metrics*
+
+![Training Efficiency](analysis_output/training_efficiency.png)
+*Figure: Training efficiency metrics including FPS and convergence analysis*
+
+Additional test outputs are available in:
+- `test_output/` - Test run visualizations
+- `integration_test_output/` - Integration test results
+- `realistic_output/` - Realistic simulation analysis
+
+### Training Data Files
+
+The system generates detailed JSON files containing training metrics:
+
+#### training_data.json
+Contains complete training session data:
+```json
+{
+  "metadata": {
+    "algorithm": "PPO",
+    "env_name": "LunarAlighting-v1",
+    "num_envs": 8,
+    "batch_size": 40,
+    "max_frames": 10000000,
+    "reward_threshold": 160
+  },
+  "training_metrics": [
+    {
+      "update": 10,
+      "total_frames": 3520,
+      "fps": 3519999901696.0,
+      "average_reward": 392.0,
+      "episode_count": 8,
+      "policy_loss": -0.0017563585424795747,
+      "value_loss": 0.2610202431678772,
+      "entropy": 1.3344768285751343,
+      "success_rate": 1.0
+    }
+  ],
+  "episodes": [
+    {
+      "episode": 1,
+      "reward": 393.8386535644531,
+      "length": 1000,
+      "success": true,
+      "crash": false,
+      "final_altitude": 0.0,
+      "final_velocity": 0.0,
+      "fuel_used": 0.0
+    }
+  ]
+}
+```
+
+#### test_data.json
+Template file for test runs with metadata structure.
+
+#### realistic_training_data.json
+Data from realistic lunar alighting scenarios with enhanced physics.
+
+### Key Metrics Explained
+
+- **policy_loss**: Loss from the policy network (action selection)
+- **value_loss**: Loss from the value network (state evaluation)
+- **entropy**: Exploration measure (higher = more exploration)
+- **success_rate**: Percentage of successful landings
+- **average_reward**: Mean reward across episodes
+- **fps**: Frames per second during training
 
 ## Project Structure
 

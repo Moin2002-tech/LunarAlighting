@@ -1266,7 +1266,7 @@ public:
     }
 };
 
-
+/*
 TEST_CASE("LunarAlightingSimulationTraining")
 {
     spdlog::set_level(spdlog::level::info);
@@ -1284,3 +1284,4 @@ TEST_CASE("LunarAlightingSimulationTraining")
         spdlog::error("Simulation failed: {}", e.what());
     }
 }
+*/

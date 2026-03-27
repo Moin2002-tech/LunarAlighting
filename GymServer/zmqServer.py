@@ -3,6 +3,7 @@ Pytorch-cpp-rl OpenAI gym server ZMQ client.
 """
 import zmq
 import msgpack
+import logging
 
 
 class ZmqClient:
@@ -32,6 +33,9 @@ class ZmqClient:
         Sends a message to the client.
         """
         if isinstance(message, str):
+            logging.info(f"Sending string message: {message}")
             self.socket.send_string(message)
         else:
-            self.socket.send(message.to_msg())
+            msg_bytes = message.to_msg()
+            logging.info(f"Sending MessagePack message ({len(msg_bytes)} bytes): {msg_bytes[:100]}...")
+            self.socket.send(msg_bytes)
