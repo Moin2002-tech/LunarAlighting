@@ -1,0 +1,48 @@
+# =============================================================================
+# REQUIREMENTS FOR LUNAR ALIGHTING RL PROJECT
+# =============================================================================
+# Install Python packages with: pip install -r requirements.txt
+# Install vcpkg packages with: ./vcpkg install <package>
+# =============================================================================
+
+# =============================================================================
+# PYTHON PACKAGES
+# =============================================================================
+
+# Core data processing and visualization
+numpy>=1.21.0
+pandas>=1.3.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# Reinforcement Learning
+gymnasium>=0.28.0
+stable-baselines3>=2.0.0
+
+# Communication
+pyzmq>=22.0.0
+msgpack>=1.0.0
+
+# Built-in Python modules used (no pip install needed):
+# abc, argparse, dataclasses, datetime, json, logging,
+# os, pathlib, random, signal, subprocess, sys, threading, time, typing, warnings
+
+# =============================================================================
+# VCPKG PACKAGES (C++ dependencies)
+# =============================================================================
+# Excluded (bundled/third_party): libtorch, cppzmq, doctest
+#
+# Install via vcpkg:
+#   vcpkg install msgpack-c
+#   vcpkg install nlohmann-json
+#   vcpkg install sdl3
+#   vcpkg install glm
+#   vcpkg install spdlog
+#   vcpkg install fmt
+
+# msgpack-c       - MessagePack serialization/deserialization (#include <msgpack.hpp>)
+# nlohmann-json   - JSON library (#include <nlohmann/json.hpp>)
+# sdl3            - Simple DirectMedia Layer 3 (#include <SDL3/SDL.h>)
+# glm             - OpenGL Mathematics (#include <glm/*.hpp>)
+# spdlog          - Logging library (#include <spdlog/spdlog.h>)
+# fmt             - Formatting library (#include <fmt/ostream.h>)
