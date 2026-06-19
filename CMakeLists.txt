@@ -22,8 +22,11 @@ find_package(glm CONFIG REQUIRED)
 # We'll use libtorch's built-in fmt and manually link spdlog
 
 # Configure doctest
+if(MSVC)
+  add_compile_options(/utf-8)
+endif()
 
-
+set(CMAKE_TOOLCHAIN_FILE "C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain")
 add_executable(LunarAlightingRL main.cpp
         include/Generator/Generator.hpp
         include/Generator/FeedForwardGenerator.hpp
@@ -92,37 +95,22 @@ target_include_directories(LunarAlightingRL PRIVATE
 
 target_link_libraries(LunarAlightingRL PRIVATE
 
-        -Wl,--no-as-needed
-        -Wl,--whole-archive
-        "${CMAKE_SOURCE_DIR}/External/libtorch/lib/libtorch_cuda.so"
-        "${CMAKE_SOURCE_DIR}/External/libtorch/lib/libtorch_cpu.so"
-        "${CMAKE_SOURCE_DIR}/External/libtorch/lib/libtorch.so"
-        -Wl,--no-whole-archive
+ 
+        "${CMAKE_SOURCE_DIR}/External/libtorch/lib/torch.lib"
+         "${CMAKE_SOURCE_DIR}/External/libtorch/lib/torch_cpu.lib"
+        "${CMAKE_SOURCE_DIR}/External/libtorch/lib/c10.lib"
+        "${CMAKE_SOURCE_DIR}/External/libtorch/lib/fmt.lib"
 
-        "${CMAKE_SOURCE_DIR}/External/libtorch/lib/libc10_cuda.so"
-        "${CMAKE_SOURCE_DIR}/External/libtorch/lib/libc10.so"
 
-        # 1. CUDA Runtime (from your toolkit)
-        "/usr/local/cuda/lib64/libcudart.so"
 
-        # 2. CUDA Driver (The one usually missing - found in system libs)
-        "/usr/lib/x86_64-linux-gnu/libcuda.so.1"
 
-        # 3. NVRTC (Compiler library)
-        "/usr/local/cuda/lib64/libnvrtc.so"
 
-        # System base libs
-        pthread
-        dl
-        m
+
+
 )
 
 # Link fmt and spdlog together to ensure proper dependency order
 # Use libtorch's fmt library to avoid version conflicts
-target_link_libraries(LunarAlightingRL PRIVATE 
-    "${CMAKE_SOURCE_DIR}/External/libtorch/lib/libfmt.a"
-    "/home/moinshaikh/vcpkg/installed/x64-linux/debug/lib/libspdlogd.a"
-)
 
 target_link_libraries(LunarAlightingRL PRIVATE libzmq-static)
 
